@@ -6,13 +6,14 @@ permalink: "contact.php"
 
 <div class="container">
   <section class="hero">
-    <h1>Contact Whispers</h1>
+    <h1>Contact {{ site.name }}</h1>
     <p>Questions, feedback, or ideas? Send a note and I’ll get back to you as soon as I can.</p>
   </section>
 
   <section class="panel">
     <?php
-    $recipientEmail = 'preston+whispers@bannister.us';
+    $recipientEmail = '{{ site.contactEmail }}';
+    $siteDomain = '{{ site.domain }}';
     $notice = '';
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -25,7 +26,7 @@ permalink: "contact.php"
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $notice = 'Please enter a valid email address.';
         } else {
-            $subject = 'New message from ' . $name . ' via whispers.bannister.us';
+            $subject = 'New message from ' . $name . ' via ' . $siteDomain;
             $body = "Name: $name\nEmail: $email\n\n$message\n";
             $headers = [
                 'From: ' . $recipientEmail,

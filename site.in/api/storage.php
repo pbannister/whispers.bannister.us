@@ -35,6 +35,7 @@ function cleanupExpiredFiles($directory) {
     }
 
     $now = time();
+    $trashMaxAge = 30 * 86400; // 30 days
     foreach (scandir($directory) ?: [] as $entry) {
         if ($entry === '.' || $entry === '..') {
             continue;
@@ -52,7 +53,16 @@ function cleanupExpiredFiles($directory) {
         }
 
         $expiresAt = $meta['expires_at'] ?? null;
+        $deletedAt = $meta['deleted_at'] ?? null;
+        $shouldDelete = false;
+
         if (is_numeric($expiresAt) && (int) $expiresAt <= $now) {
+            $shouldDelete = true;
+        } elseif (is_numeric($deletedAt) && ($now - (int) $deletedAt) >= $trashMaxAge) {
+            $shouldDelete = true;
+        }
+
+        if ($shouldDelete) {
             $filePath = $directory . '/' . $uuid . '.bin';
             if (is_file($metaPath)) {
                 unlink($metaPath);
@@ -203,7 +213,7 @@ if ($action === 'list') {
         if (substr($entry, -10) === '.meta.json') {
             $metaPath = $collectionDirectory . '/' . $entry;
             $meta = json_decode(file_get_contents($metaPath), true);
-            if (is_array($meta)) {
+            if (is_array($meta) && empty($meta['deleted_at'])) {
                 $files[] = [
                     'uuid' => $meta['uuid'] ?? basename($entry, '.meta.json'),
                     'name' => $meta['name'] ?? 'Stored file',
@@ -224,7 +234,7 @@ if ($action === 'list') {
     exit;
 }
 
-if ($action === 'download') {
+if ($action === 'listTrash') {
     $collectionId = trim((string) ($data['collection_id'] ?? 'default'));
     if ($collectionId === '') {
         $collectionId = 'default';
@@ -232,6 +242,61 @@ if ($action === 'download') {
     $collectionDirectory = ensureCollectionDirectory($storageRoot, $userId, $collectionId);
     cleanupExpiredFiles($collectionDirectory);
 
+    $files = [];
+    foreach (scandir($collectionDirectory) as $entry) {
+        if ($entry === '.' || $entry === '..') {
+            continue;
+        }
+        if (substr($entry, -10) === '.meta.json') {
+            $metaPath = $collectionDirectory . '/' . $entry;
+            $meta = json_decode(file_get_contents($metaPath), true);
+            if (is_array($meta) && !empty($meta['deleted_at'])) {
+                $files[] = [
+                    'uuid' => $meta['uuid'] ?? basename($entry, '.meta.json'),
+                    'name' => $meta['name'] ?? 'Stored file',
+                    'size' => $meta['size'] ?? 0,
+                    'uploaded_at' => $meta['uploaded_at'] ?? 0,
+                    'deleted_at' => $meta['deleted_at'],
+                    'expires_at' => $meta['expires_at'] ?? null,
+                    'encrypted_key' => $meta['encrypted_key'] ?? null,
+                ];
+            }
+        }
+    }
+
+    usort($files, function ($left, $right) {
+        return ($right['deleted_at'] ?? 0) <=> ($left['deleted_at'] ?? 0);
+    });
+
+    echo json_encode(['success' => true, 'files' => $files]);
+    exit;
+}
+
+function findFileByUuid($storageRoot, $uuid) {
+    if (!preg_match('/^[a-zA-Z0-9_-]+$/', $uuid)) {
+        return null;
+    }
+    try {
+        $dirIterator = new RecursiveDirectoryIterator($storageRoot, RecursiveDirectoryIterator::SKIP_DOTS);
+        $iterator = new RecursiveIteratorIterator($dirIterator);
+        foreach ($iterator as $file) {
+            if ($file->getFilename() === $uuid . '.meta.json') {
+                $metaPath = $file->getPathname();
+                $filePath = dirname($metaPath) . '/' . $uuid . '.bin';
+                return [
+                    'metaPath' => $metaPath,
+                    'filePath' => $filePath,
+                    'directory' => dirname($metaPath)
+                ];
+            }
+        }
+    } catch (Exception $e) {
+        return null;
+    }
+    return null;
+}
+
+if ($action === 'download' || $action === 'downloadShared') {
     $uuid = preg_replace('/[^a-zA-Z0-9_-]/', '', $data['uuid'] ?? '');
     if ($uuid === '') {
         http_response_code(400);
@@ -239,20 +304,54 @@ if ($action === 'download') {
         exit;
     }
 
-    $filePath = $collectionDirectory . '/' . $uuid . '.bin';
-    $metaPath = $collectionDirectory . '/' . $uuid . '.meta.json';
+    $collectionId = trim((string) ($data['collection_id'] ?? 'default'));
+    if ($collectionId === '') {
+        $collectionId = 'default';
+    }
 
-    if (!is_file($filePath)) {
+    $filePath = null;
+    $metaPath = null;
+
+    if ($userId !== '') {
+        $collectionDirectory = ensureCollectionDirectory($storageRoot, $userId, $collectionId);
+        cleanupExpiredFiles($collectionDirectory);
+        $candidateFilePath = $collectionDirectory . '/' . $uuid . '.bin';
+        $candidateMetaPath = $collectionDirectory . '/' . $uuid . '.meta.json';
+        if (is_file($candidateFilePath)) {
+            $filePath = $candidateFilePath;
+            $metaPath = $candidateMetaPath;
+        }
+    }
+
+    if (!$filePath) {
+        $found = findFileByUuid($storageRoot, $uuid);
+        if ($found) {
+            cleanupExpiredFiles($found['directory']);
+            if (is_file($found['filePath'])) {
+                $filePath = $found['filePath'];
+                $metaPath = $found['metaPath'];
+            }
+        }
+    }
+
+    if (!$filePath || !is_file($filePath)) {
         http_response_code(404);
-        echo json_encode(['success' => false, 'error' => 'File not found']);
+        echo json_encode(['success' => false, 'error' => 'File not found or access revoked']);
         exit;
     }
 
-    $dataPayload = base64_encode(file_get_contents($filePath));
     $meta = [];
     if (is_file($metaPath)) {
         $meta = json_decode(file_get_contents($metaPath), true) ?: [];
     }
+
+    if (!empty($meta['deleted_at'])) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'File has been deleted by owner']);
+        exit;
+    }
+
+    $dataPayload = base64_encode(file_get_contents($filePath));
 
     echo json_encode([
         'success' => true,
@@ -263,7 +362,65 @@ if ($action === 'download') {
     exit;
 }
 
+
 if ($action === 'delete') {
+    $collectionId = trim((string) ($data['collection_id'] ?? 'default'));
+    if ($collectionId === '') {
+        $collectionId = 'default';
+    }
+    $collectionDirectory = ensureCollectionDirectory($storageRoot, $userId, $collectionId);
+
+    $uuid = preg_replace('/[^a-zA-Z0-9_-]/', '', $data['uuid'] ?? '');
+    if ($uuid === '') {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Missing UUID']);
+        exit;
+    }
+
+    $metaPath = $collectionDirectory . '/' . $uuid . '.meta.json';
+    if (is_file($metaPath)) {
+        $meta = json_decode(file_get_contents($metaPath), true) ?: [];
+        $meta['deleted_at'] = time();
+        file_put_contents($metaPath, json_encode($meta));
+        echo json_encode(['success' => true, 'soft_deleted' => true]);
+        exit;
+    }
+
+    http_response_code(404);
+    echo json_encode(['success' => false, 'error' => 'File not found']);
+    exit;
+}
+
+if ($action === 'restore') {
+    $collectionId = trim((string) ($data['collection_id'] ?? 'default'));
+    if ($collectionId === '') {
+        $collectionId = 'default';
+    }
+    $collectionDirectory = ensureCollectionDirectory($storageRoot, $userId, $collectionId);
+
+    $uuid = preg_replace('/[^a-zA-Z0-9_-]/', '', $data['uuid'] ?? '');
+    if ($uuid === '') {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Missing UUID']);
+        exit;
+    }
+
+    $metaPath = $collectionDirectory . '/' . $uuid . '.meta.json';
+    if (!is_file($metaPath)) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'File not found']);
+        exit;
+    }
+
+    $meta = json_decode(file_get_contents($metaPath), true) ?: [];
+    unset($meta['deleted_at']);
+    file_put_contents($metaPath, json_encode($meta));
+
+    echo json_encode(['success' => true, 'restored' => true]);
+    exit;
+}
+
+if ($action === 'deletePermanent') {
     $collectionId = trim((string) ($data['collection_id'] ?? 'default'));
     if ($collectionId === '') {
         $collectionId = 'default';
@@ -300,3 +457,4 @@ if ($action === 'delete') {
 
 http_response_code(404);
 echo json_encode(['success' => false, 'error' => 'Unknown action']);
+

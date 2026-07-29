@@ -233,7 +233,8 @@ button:disabled {
   color: #e8f7ff;
 }
 
-input[type="date"] {
+input[type="date"],
+input[type="text"] {
   width: 100%;
   margin-top: 0.35rem;
   padding: 0.85rem 1rem;
@@ -244,10 +245,37 @@ input[type="date"] {
   font: inherit;
 }
 
-input[type="date"]:focus {
+input[type="date"]:focus,
+input[type="text"]:focus {
   outline: 2px solid rgba(38, 198, 218, 0.45);
   border-color: rgba(38, 198, 218, 0.6);
 }
+
+.search-and-view-controls {
+  margin-bottom: 1rem;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.view-toggle button {
+  margin: 0;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
+.view-toggle button.active-tab {
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #07111f;
+  box-shadow: 0 4px 12px rgba(38, 198, 218, 0.25);
+}
+
 
 select,
 textarea {

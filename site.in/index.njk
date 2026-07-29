@@ -24,7 +24,14 @@ title: Home
     <strong>Important:</strong> Your decryption key remains in this browser unless you explicitly share it with another user. If you clear browser storage or lose the key, your encrypted files cannot be decrypted again.
   </section>
 
+  <section id="sharedFilePane" class="panel notice hidden">
+    <h2>Shared File Received</h2>
+    <p id="sharedFileStatus">A direct share link was detected in your URL.</p>
+    <button id="downloadSharedButton" type="button">Download & Decrypt Shared File</button>
+  </section>
+
   <div class="grid">
+
     <section class="panel">
       <h2>Manage your decryption key</h2>
       <p>The key stays in your browser and is never sent to the server. Copy it to share access with another user, or paste a shared key here to decrypt files from that browser.</p>
@@ -66,9 +73,20 @@ title: Home
     <section class="panel">
       <h2>Your stored files</h2>
       <p id="state">Preparing your browser key…</p>
+      
+      <div class="search-and-view-controls">
+        <label class="inline-label" for="searchInput">Search files by name or date</label>
+        <input id="searchInput" type="text" placeholder="Type filename or date...">
+        <div class="view-toggle">
+          <button id="viewActiveButton" type="button" class="active-tab">Active files</button>
+          <button id="viewTrashButton" type="button">Recently deleted</button>
+        </div>
+      </div>
+
       <div id="storageList" class="file-list"></div>
     </section>
   </div>
+
 
   <section class="panel hidden" id="downloadPane">
     <h2>Download a file</h2>

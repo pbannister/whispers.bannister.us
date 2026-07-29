@@ -7,7 +7,7 @@ title: Home
   <section class="hero">
     <h1>Whispers</h1>
     <p>Anonymous encrypted file storage for personal use.</p>
-    <p>No account required. Your browser generates and keeps the encryption key locally, so only encrypted data is sent to the server.</p>
+    <p>No account is required. Your browser generates and stores the decryption key locally, and the server receives only encrypted data and metadata.</p>
   </section>
 
   <section class="panel">
@@ -15,19 +15,19 @@ title: Home
     <ol class="step-list">
       <li>Select a file from your device.</li>
       <li>Your browser encrypts it before it leaves your device.</li>
-      <li>The server stores only the encrypted blob and metadata.</li>
-      <li>When you return, your browser can retrieve and decrypt the file locally.</li>
+      <li>The server stores only the encrypted payload and metadata.</li>
+      <li>You can later retrieve and decrypt the file locally in the browser.</li>
     </ol>
   </section>
 
   <section class="panel notice">
-    <strong>Important:</strong> If you clear your browser storage or lose the local key, your encrypted files cannot be decrypted again. Keep your browser data intact if you want to access them later.
+    <strong>Important:</strong> Your decryption key remains in this browser unless you explicitly share it with another user. If you clear browser storage or lose the key, your encrypted files cannot be decrypted again.
   </section>
 
   <div class="grid">
     <section class="panel">
-      <h2>Share or recover a decryption key</h2>
-      <p>This key stays in your browser and is never sent to the server. Copy it to share access with another user, or paste a shared key here to decrypt files from that browser.</p>
+      <h2>Manage your decryption key</h2>
+      <p>The key stays in your browser and is never sent to the server. Copy it to share access with another user, or paste a shared key here to decrypt files from that browser.</p>
       <label class="inline-label" for="keyValue">Current decryption key</label>
       <textarea id="keyValue" rows="4" readonly></textarea>
       <div class="key-actions">
@@ -40,7 +40,9 @@ title: Home
 
     <section class="panel">
       <h2>Upload a file</h2>
-      <p>Select a local file. It will be encrypted in your browser before it is sent.</p>
+      <p>Select a local file. It will be encrypted in your browser before it is sent. You can also set an optional expiration date.</p>
+      <label class="inline-label" for="expirationDate">Optional expiration date</label>
+      <input id="expirationDate" type="date">
       <input id="fileInput" class="hidden" type="file">
       <label for="fileInput" class="file-picker">Choose file</label>
       <button id="uploadButton" type="button">Upload encrypted file</button>

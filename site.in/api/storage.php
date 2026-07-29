@@ -21,6 +21,41 @@ function createUuid() {
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
+function cleanupExpiredFiles($directory) {
+    if (!is_dir($directory)) {
+        return;
+    }
+
+    $now = time();
+    foreach (scandir($directory) ?: [] as $entry) {
+        if ($entry === '.' || $entry === '..') {
+            continue;
+        }
+
+        if (substr($entry, -10) !== '.meta.json') {
+            continue;
+        }
+
+        $metaPath = $directory . '/' . $entry;
+        $uuid = basename($entry, '.meta.json');
+        $meta = json_decode(file_get_contents($metaPath), true);
+        if (!is_array($meta)) {
+            continue;
+        }
+
+        $expiresAt = $meta['expires_at'] ?? null;
+        if (is_numeric($expiresAt) && (int) $expiresAt <= $now) {
+            $filePath = $directory . '/' . $uuid . '.bin';
+            if (is_file($metaPath)) {
+                unlink($metaPath);
+            }
+            if (is_file($filePath)) {
+                unlink($filePath);
+            }
+        }
+    }
+}
+
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
@@ -60,12 +95,16 @@ if ($action === 'upload') {
         exit;
     }
 
+    $expiration = $data['expires_at'] ?? null;
     $metadata = [
         'uuid' => $uuid,
         'name' => $data['file_name'] ?? 'upload.bin',
         'size' => strlen($decoded),
         'uploaded_at' => time()
     ];
+    if (is_numeric($expiration)) {
+        $metadata['expires_at'] = (int) $expiration;
+    }
     file_put_contents($metaPath, json_encode($metadata));
 
     echo json_encode(['success' => true, 'uuid' => $uuid]);
@@ -73,6 +112,8 @@ if ($action === 'upload') {
 }
 
 if ($action === 'list') {
+    cleanupExpiredFiles($directory);
+
     $files = [];
     foreach (scandir($directory) as $entry) {
         if ($entry === '.' || $entry === '..') {
@@ -86,7 +127,8 @@ if ($action === 'list') {
                     'uuid' => $meta['uuid'] ?? basename($entry, '.meta.json'),
                     'name' => $meta['name'] ?? 'Stored file',
                     'size' => $meta['size'] ?? 0,
-                    'uploaded_at' => $meta['uploaded_at'] ?? 0
+                    'uploaded_at' => $meta['uploaded_at'] ?? 0,
+                    'expires_at' => $meta['expires_at'] ?? null
                 ];
             }
         }
@@ -101,6 +143,8 @@ if ($action === 'list') {
 }
 
 if ($action === 'download') {
+    cleanupExpiredFiles($directory);
+
     $uuid = preg_replace('/[^a-zA-Z0-9_-]/', '', $data['uuid'] ?? '');
     if ($uuid === '') {
         http_response_code(400);
@@ -129,6 +173,35 @@ if ($action === 'download') {
         'name' => $meta['name'] ?? 'download.bin',
         'data' => $dataPayload
     ]);
+    exit;
+}
+
+if ($action === 'delete') {
+    $uuid = preg_replace('/[^a-zA-Z0-9_-]/', '', $data['uuid'] ?? '');
+    if ($uuid === '') {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Missing UUID']);
+        exit;
+    }
+
+    $filePath = $directory . '/' . $uuid . '.bin';
+    $metaPath = $directory . '/' . $uuid . '.meta.json';
+
+    $deleted = false;
+    if (is_file($filePath)) {
+        $deleted = unlink($filePath);
+    }
+    if (is_file($metaPath)) {
+        $deleted = unlink($metaPath) || $deleted;
+    }
+
+    if ($deleted) {
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    http_response_code(404);
+    echo json_encode(['success' => false, 'error' => 'File not found']);
     exit;
 }
 

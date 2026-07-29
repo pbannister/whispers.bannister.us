@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyKeyButton = document.getElementById('copyKeyButton');
   const importKeyInput = document.getElementById('importKeyInput');
   const importKeyButton = document.getElementById('importKeyButton');
+  const expirationDateInput = document.getElementById('expirationDate');
 
   const keyStorageName = 'whispers.encryptionKey';
   const userStorageName = 'whispers.userId';
@@ -41,6 +42,23 @@ document.addEventListener('DOMContentLoaded', () => {
       bytes[i] = binary.charCodeAt(i);
     }
     return bytes;
+  }
+
+  function getExpirationTimestamp(value) {
+    if (!value) {
+      return null;
+    }
+
+    const date = new Date(`${value}T23:59:59`);
+    return Math.floor(date.getTime() / 1000);
+  }
+
+  function formatExpiration(entry) {
+    if (!entry.expires_at) {
+      return 'No expiration date';
+    }
+
+    return `Expires ${new Date(entry.expires_at * 1000).toLocaleDateString()}`;
   }
 
   async function importKey(rawKey) {
@@ -114,12 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const payload = await response.json();
-    if (!payload.success) {
-      storageList.innerHTML = '<em>No files yet. Upload one to get started.</em>';
-      return;
-    }
-
-    if (!payload.files.length) {
+    if (!payload.success || !payload.files.length) {
       storageList.innerHTML = '<em>No files yet. Upload one to get started.</em>';
       return;
     }
@@ -128,7 +141,22 @@ document.addEventListener('DOMContentLoaded', () => {
     payload.files.forEach((entry) => {
       const item = document.createElement('div');
       item.className = 'file-item';
-      item.innerHTML = `<span>${entry.name}</span>`;
+
+      const details = document.createElement('div');
+      details.className = 'file-item-details';
+
+      const name = document.createElement('strong');
+      name.textContent = entry.name;
+      details.appendChild(name);
+
+      const meta = document.createElement('div');
+      meta.className = 'file-item-meta';
+      meta.textContent = `${formatExpiration(entry)} • ${new Date(entry.uploaded_at * 1000).toLocaleString()}`;
+      details.appendChild(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'file-item-actions';
+
       const selectButton = document.createElement('button');
       selectButton.type = 'button';
       selectButton.textContent = 'Open';
@@ -138,7 +166,40 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadMeta.textContent = `Stored as ${entry.uuid}`;
         downloadPane.classList.remove('hidden');
       });
-      item.appendChild(selectButton);
+
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.textContent = 'Delete';
+      deleteButton.addEventListener('click', async () => {
+        try {
+          const deleteResponse = await fetch('/api/storage.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', user_id: userId, uuid: entry.uuid })
+          });
+          const deletePayload = await deleteResponse.json();
+          if (!deletePayload.success) {
+            throw new Error(deletePayload.error || 'Delete failed');
+          }
+
+          if (activeFile && activeFile.uuid === entry.uuid) {
+            activeFile = null;
+            downloadPane.classList.add('hidden');
+            downloadTitle.textContent = 'Select a file';
+            downloadMeta.textContent = 'Choose an entry from the list to decrypt it locally.';
+          }
+
+          showMessage(uploadResult, `Deleted ${entry.name}.`);
+          await refreshFiles();
+        } catch (error) {
+          showMessage(uploadResult, error.message, 'error');
+        }
+      });
+
+      actions.appendChild(selectButton);
+      actions.appendChild(deleteButton);
+      item.appendChild(details);
+      item.appendChild(actions);
       storageList.appendChild(item);
     });
   }
@@ -159,11 +220,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch('/api/storage.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'upload', user_id: userId, file_name: file.name, data: encryptedData })
+        body: JSON.stringify({
+          action: 'upload',
+          user_id: userId,
+          file_name: file.name,
+          data: encryptedData,
+          expires_at: getExpirationTimestamp(expirationDateInput?.value || '')
+        })
       });
       const payload = await response.json();
       if (!payload.success) {
         throw new Error(payload.error || 'Upload failed');
+      }
+
+      if (expirationDateInput) {
+        expirationDateInput.value = '';
       }
 
       showMessage(uploadResult, `Stored ${file.name}. It is now available for later download and local decryption.`);

@@ -88,15 +88,20 @@ if ($action === 'createCollection') {
     $collectionId = createUuid();
     $collectionName = trim((string) ($data['name'] ?? 'Default collection'));
     $description = trim((string) ($data['description'] ?? ''));
-    $collectionDirectory = ensureCollectionDirectory($storageRoot, $userId, $collectionId);
-    $metadataPath = $storageRoot . '/' . $userId . '/collections/' . $collectionId . '.meta.json';
+    $encryptedKey = trim((string) ($data['encrypted_key'] ?? ''));
+    $collectionPath = ensureCollectionDirectory($storageRoot, $userId, $collectionId);
+    $metadataPath = $collectionPath . '/collection.meta.json';
 
     $metadata = [
         'uuid' => $collectionId,
         'name' => $collectionName !== '' ? $collectionName : 'Default collection',
         'description' => $description,
-        'created_at' => time()
+        'created_at' => time(),
     ];
+
+    if ($encryptedKey !== '') {
+        $metadata['encrypted_key'] = $encryptedKey;
+    }
 
     file_put_contents($metadataPath, json_encode($metadata));
     echo json_encode(['success' => true, 'collection' => $metadata]);
@@ -111,10 +116,11 @@ if ($action === 'listCollections') {
             if ($entry === '.' || $entry === '..') {
                 continue;
             }
-            if (substr($entry, -10) !== '.meta.json') {
+            $metaPath = $collectionsDirectory . '/' . $entry . '/collection.meta.json';
+            if (!is_file($metaPath)) {
                 continue;
             }
-            $meta = json_decode(file_get_contents($collectionsDirectory . '/' . $entry), true);
+            $meta = json_decode(file_get_contents($metaPath), true);
             if (is_array($meta)) {
                 $collections[] = $meta;
             }
@@ -126,7 +132,8 @@ if ($action === 'listCollections') {
             'uuid' => 'default',
             'name' => 'Default collection',
             'description' => 'Files you upload first go here.',
-            'created_at' => time()
+            'created_at' => time(),
+            'encrypted_key' => null, // The default collection uses the master key directly
         ];
         $collections[] = $defaultCollection;
     }
@@ -161,12 +168,16 @@ if ($action === 'upload') {
     }
 
     $expiration = $data['expires_at'] ?? null;
+    $encryptedKey = $data['encrypted_key'] ?? null;
     $metadata = [
         'uuid' => $uuid,
         'name' => $data['file_name'] ?? 'upload.bin',
         'size' => strlen($decoded),
         'uploaded_at' => time()
     ];
+    if ($encryptedKey) {
+        $metadata['encrypted_key'] = $encryptedKey;
+    }
     if (is_numeric($expiration)) {
         $metadata['expires_at'] = (int) $expiration;
     }
@@ -198,7 +209,8 @@ if ($action === 'list') {
                     'name' => $meta['name'] ?? 'Stored file',
                     'size' => $meta['size'] ?? 0,
                     'uploaded_at' => $meta['uploaded_at'] ?? 0,
-                    'expires_at' => $meta['expires_at'] ?? null
+                    'expires_at' => $meta['expires_at'] ?? null,
+                    'encrypted_key' => $meta['encrypted_key'] ?? null,
                 ];
             }
         }

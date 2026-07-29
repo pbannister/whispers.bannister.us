@@ -17,9 +17,10 @@ The system shall support the following capabilities.
 - The system shall allow users to set an expiration date for a file that triggers automatic deletion.
 
 ## Sharing and Access
-- The system shall allow users to share individual files with other users through a unique share link.
-- The system shall allow users to revoke file sharing access.
-- The system shall allow users to share a group of files.
+- The system shall support a hierarchical key model where each file and collection has a unique encryption key, which is itself encrypted by a parent key.
+- The system shall allow a user to generate a shareable link for an individual file. This link shall contain the file's unique, decrypted key in the URL fragment.
+- The system shall allow a user to share an entire collection by providing the collection's decrypted key.
+- Revoking access to a shared file or collection shall be accomplished by deleting the corresponding item on the server.
 
 ## Privacy and Security
 - The system shall generate a public and private key pair in the browser on first visit and keep it local to the browser.
@@ -34,4 +35,3 @@ The system shall support the following capabilities.
 - The system shall provide clear status messages and guidance for users.
 - The system shall show file metadata such as size and upload date.
 - The system shall allow users to search files and collections by name or date.
-

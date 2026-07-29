@@ -208,6 +208,37 @@ button:disabled {
   font-size: 0.95rem;
 }
 
+.inline-label {
+  display: block;
+  margin-top: 0.9rem;
+  font-weight: 600;
+  color: #e8f7ff;
+}
+
+textarea {
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(3, 10, 22, 0.7);
+  color: #f5f5f5;
+  font: inherit;
+  resize: vertical;
+  min-height: 100px;
+}
+
+textarea:focus {
+  outline: 2px solid rgba(38, 198, 218, 0.45);
+  border-color: rgba(38, 198, 218, 0.6);
+}
+
+.key-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .contact-form {
   display: flex;
   flex-direction: column;

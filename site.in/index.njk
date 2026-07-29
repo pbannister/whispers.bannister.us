@@ -26,6 +26,19 @@ title: Home
 
   <div class="grid">
     <section class="panel">
+      <h2>Share or recover a decryption key</h2>
+      <p>This key stays in your browser and is never sent to the server. Copy it to share access with another user, or paste a shared key here to decrypt files from that browser.</p>
+      <label class="inline-label" for="keyValue">Current decryption key</label>
+      <textarea id="keyValue" rows="4" readonly></textarea>
+      <div class="key-actions">
+        <button id="copyKeyButton" type="button">Copy key</button>
+      </div>
+      <label class="inline-label" for="importKeyInput">Paste a shared key</label>
+      <textarea id="importKeyInput" rows="4" placeholder="Paste the decryption key shared by another user"></textarea>
+      <button id="importKeyButton" type="button">Import key</button>
+    </section>
+
+    <section class="panel">
       <h2>Upload a file</h2>
       <p>Select a local file. It will be encrypted in your browser before it is sent.</p>
       <input id="fileInput" class="hidden" type="file">

@@ -12,7 +12,7 @@ This document defines the functional and technical requirements for the website 
 
 ## 2. Project Objective
 
-Create a simple, maintainable website that allows users to upload files, store them securely in encrypted form, and retrieve them later without exposing plaintext file contents to the server.
+Create a simple, maintainable website that allows users to upload files, store them securely in encrypted form, and retrieve them later without exposing plaintext file contents to the server. The system shall ensure that encryption keys are never transmitted to the server and shall provide a user-facing mechanism for sharing decryption keys with other users.
 
 ## 3. Scope
 
@@ -50,10 +50,12 @@ Create a simple, maintainable website that allows users to upload files, store t
 ### 5.2 File Storage Workflow
 
 - The browser shall generate or recover a local encryption key.
+- Encryption keys shall never be sent to the server under any circumstance.
 - The user shall be able to select a local file and encrypt it in the browser before upload.
 - Only encrypted data shall be sent to the server.
 - The server shall store encrypted files and metadata under a per-user directory.
 - The interface shall allow the user to list stored files and retrieve them for local decryption.
+- The product shall provide a mechanism for a user to share decryption keys with other users in a controlled, explicit way.
 
 ## 6. Technical Architecture
 
@@ -125,6 +127,8 @@ whispers-bannister/
 - Implement browser-side key generation and storage.
 - Add file encryption before upload and local decryption after download.
 - Validate that only encrypted payloads are transmitted to the server.
+- Validate that encryption keys remain local to the browser and are never transmitted to the server.
+- Implement a clear decryption-key sharing flow for other users.
 
 ### Milestone 3: Server Persistence
 - Implement PHP endpoints for upload, list, and download operations.
@@ -171,6 +175,8 @@ The project will be considered complete when:
 - The site builds successfully with Eleventy.
 - The homepage and contact page render correctly.
 - The upload and retrieval workflow operates using browser-side encryption.
+- Encryption keys are never sent to the server.
+- Users can share decryption keys with other users through an explicit mechanism.
 - The contact form submits successfully through the PHP handler.
 - The site can be deployed to DreamHost using the documented workflow.
 - The implemented milestones above have been completed and validated.

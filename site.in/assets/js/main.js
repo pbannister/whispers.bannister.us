@@ -8,6 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const downloadTitle = document.getElementById('downloadTitle');
   const downloadMeta = document.getElementById('downloadMeta');
   const downloadButton = document.getElementById('downloadButton');
+  const keyValue = document.getElementById('keyValue');
+  const copyKeyButton = document.getElementById('copyKeyButton');
+  const importKeyInput = document.getElementById('importKeyInput');
+  const importKeyButton = document.getElementById('importKeyButton');
 
   const keyStorageName = 'whispers.encryptionKey';
   const userStorageName = 'whispers.userId';
@@ -44,19 +48,30 @@ document.addEventListener('DOMContentLoaded', () => {
     return crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
   }
 
+  function updateKeyDisplay(encodedKey) {
+    if (keyValue) {
+      keyValue.value = encodedKey || '';
+    }
+  }
+
+  async function storeAndActivateKey(encodedKey) {
+    localStorage.setItem(keyStorageName, encodedKey);
+    encryptionKey = await importKey(encodedKey);
+    updateKeyDisplay(encodedKey);
+    return encodedKey;
+  }
+
   async function ensureKey() {
     const storedKey = localStorage.getItem(keyStorageName);
     if (storedKey) {
       encryptionKey = await importKey(storedKey);
+      updateKeyDisplay(storedKey);
       return storedKey;
     }
 
-    const generatedKey = crypto.getRandomValues(new Uint8Array(32));
     const exportedKey = await crypto.subtle.exportKey('raw', await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']));
     const encodedKey = arrayBufferToBase64(exportedKey);
-    localStorage.setItem(keyStorageName, encodedKey);
-    encryptionKey = await importKey(encodedKey);
-    return encodedKey;
+    return storeAndActivateKey(encodedKey);
   }
 
   async function deriveUserId() {
@@ -192,6 +207,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function copyCurrentKey() {
+    if (!keyValue || !keyValue.value) {
+      showMessage(uploadResult, 'No decryption key is available yet.', 'error');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(keyValue.value);
+      showMessage(uploadResult, 'Decryption key copied. Share it only with trusted recipients.');
+    } catch (error) {
+      showMessage(uploadResult, 'Copy failed. Select and copy the key manually instead.', 'error');
+    }
+  }
+
+  async function importSharedKey() {
+    if (!importKeyInput) {
+      return;
+    }
+
+    const sharedKey = importKeyInput.value.trim().replace(/\s+/g, '');
+    if (!sharedKey) {
+      showMessage(uploadResult, 'Paste a decryption key before importing it.', 'error');
+      return;
+    }
+
+    try {
+      await storeAndActivateKey(sharedKey);
+      importKeyInput.value = '';
+      showMessage(uploadResult, 'Imported a decryption key for this browser. It is stored locally and is not sent to the server.');
+    } catch (error) {
+      showMessage(uploadResult, 'The shared key could not be imported. Please verify that it was copied correctly.', 'error');
+    }
+  }
+
   async function initialize() {
     try {
       await ensureKey();
@@ -199,6 +248,8 @@ document.addEventListener('DOMContentLoaded', () => {
       stateEl.textContent = `No account required. Your browser key is stored locally, and your files will be grouped under ${userId}.`;
       uploadButton.addEventListener('click', uploadFile);
       downloadButton.addEventListener('click', downloadAndDecrypt);
+      copyKeyButton?.addEventListener('click', copyCurrentKey);
+      importKeyButton?.addEventListener('click', importSharedKey);
       fileInput.addEventListener('change', () => {
         if (fileInput.files.length) {
           showMessage(uploadResult, `${fileInput.files[0].name} is ready to upload.`);

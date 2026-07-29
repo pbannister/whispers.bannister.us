@@ -111,6 +111,21 @@ nav a:focus-visible {
   margin-bottom: 0.6rem;
 }
 
+.step-list {
+  padding-left: 1.2rem;
+  color: var(--text-muted);
+  margin: 0.6rem 0 0;
+}
+
+.step-list li {
+  margin-bottom: 0.5rem;
+}
+
+.notice {
+  border-color: rgba(38, 198, 218, 0.35);
+  background: rgba(38, 198, 218, 0.12);
+}
+
 button,
 .file-picker {
   display: inline-flex;

@@ -6,8 +6,22 @@ title: Home
 <div class="container">
   <section class="hero">
     <h1>Whispers</h1>
-    <p>Anonymous encrypted file storage where encryption and decryption happen in your browser.</p>
-    <p>Your files are stored on the server only as encrypted blobs, and your browser keeps the key locally.</p>
+    <p>Anonymous encrypted file storage for personal use.</p>
+    <p>No account required. Your browser generates and keeps the encryption key locally, so only encrypted data is sent to the server.</p>
+  </section>
+
+  <section class="panel">
+    <h2>How it works</h2>
+    <ol class="step-list">
+      <li>Select a file from your device.</li>
+      <li>Your browser encrypts it before it leaves your device.</li>
+      <li>The server stores only the encrypted blob and metadata.</li>
+      <li>When you return, your browser can retrieve and decrypt the file locally.</li>
+    </ol>
+  </section>
+
+  <section class="panel notice">
+    <strong>Important:</strong> If you clear your browser storage or lose the local key, your encrypted files cannot be decrypted again. Keep your browser data intact if you want to access them later.
   </section>
 
   <div class="grid">

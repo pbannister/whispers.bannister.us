@@ -100,12 +100,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const payload = await response.json();
     if (!payload.success) {
-      storageList.innerHTML = '<em>No files yet.</em>';
+      storageList.innerHTML = '<em>No files yet. Upload one to get started.</em>';
       return;
     }
 
     if (!payload.files.length) {
-      storageList.innerHTML = '<em>No files yet.</em>';
+      storageList.innerHTML = '<em>No files yet. Upload one to get started.</em>';
       return;
     }
 
@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(payload.error || 'Upload failed');
       }
 
-      showMessage(uploadResult, `Uploaded ${file.name} as ${payload.uuid}.`);
+      showMessage(uploadResult, `Stored ${file.name}. It is now available for later download and local decryption.`);
       await refreshFiles();
     } catch (error) {
       showMessage(uploadResult, error.message, 'error');
@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
       link.download = payload.name || activeFile.name;
       link.click();
       URL.revokeObjectURL(url);
-      showMessage(uploadResult, `Downloaded ${payload.name || activeFile.name}.`);
+      showMessage(uploadResult, `Downloaded and decrypted ${payload.name || activeFile.name}. Keep your browser storage intact if you want to access it again later.`);
     } catch (error) {
       showMessage(uploadResult, error.message, 'error');
     }
@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await ensureKey();
       userId = await deriveUserId();
-      stateEl.textContent = `Ready. Your browser key is stored locally and your files will be grouped under ${userId}.`;
+      stateEl.textContent = `No account required. Your browser key is stored locally, and your files will be grouped under ${userId}.`;
       uploadButton.addEventListener('click', uploadFile);
       downloadButton.addEventListener('click', downloadAndDecrypt);
       fileInput.addEventListener('change', () => {

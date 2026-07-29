@@ -6,7 +6,8 @@
   "scripts": {
     "build": "npx @11ty/eleventy",
     "dev": "npx @11ty/eleventy --serve",
-    "deploy": "npm run build && rsync -avz --delete site.out/ preston@bannister.us:whispers.bannister.us/"
+    "deploy": "npm run build && rsync -avz --delete site.out/ preston@bannister.us:whispers.bannister.us/",
+    "test:client": "node --test tests/client/*.test.js"
   },
   "keywords": [],
   "author": "",

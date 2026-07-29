@@ -39,6 +39,20 @@ title: Home
     </section>
 
     <section class="panel">
+      <h2>Collections</h2>
+      <p id="collectionSummary">Your files are organized into collections.</p>
+      <label class="inline-label" for="collectionSelect">Current collection</label>
+      <select id="collectionSelect"></select>
+      <div class="collection-form">
+        <label class="inline-label" for="collectionNameInput">New collection name</label>
+        <input id="collectionNameInput" type="text" placeholder="Project files">
+        <label class="inline-label" for="collectionDescriptionInput">Collection description</label>
+        <textarea id="collectionDescriptionInput" rows="3" placeholder="Optional description"></textarea>
+        <button id="createCollectionButton" type="button">Create collection</button>
+      </div>
+    </section>
+
+    <section class="panel">
       <h2>Upload a file</h2>
       <p>Select a local file. It will be encrypted in your browser before it is sent. You can also set an optional expiration date.</p>
       <label class="inline-label" for="expirationDate">Optional expiration date</label>

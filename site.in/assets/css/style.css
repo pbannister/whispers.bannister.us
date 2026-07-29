@@ -249,6 +249,7 @@ input[type="date"]:focus {
   border-color: rgba(38, 198, 218, 0.6);
 }
 
+select,
 textarea {
   width: 100%;
   margin-top: 0.35rem;
@@ -260,6 +261,17 @@ textarea {
   font: inherit;
   resize: vertical;
   min-height: 100px;
+}
+
+select {
+  min-height: 48px;
+}
+
+.collection-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
 }
 
 textarea:focus {

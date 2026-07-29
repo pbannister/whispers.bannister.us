@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const logic = window.WhispersClientLogic || {};
   const stateEl = document.getElementById('state');
   const fileInput = document.getElementById('fileInput');
   const uploadButton = document.getElementById('uploadButton');
@@ -13,53 +14,61 @@ document.addEventListener('DOMContentLoaded', () => {
   const importKeyInput = document.getElementById('importKeyInput');
   const importKeyButton = document.getElementById('importKeyButton');
   const expirationDateInput = document.getElementById('expirationDate');
+  const collectionSelect = document.getElementById('collectionSelect');
+  const collectionSummary = document.getElementById('collectionSummary');
+  const collectionNameInput = document.getElementById('collectionNameInput');
+  const collectionDescriptionInput = document.getElementById('collectionDescriptionInput');
+  const createCollectionButton = document.getElementById('createCollectionButton');
 
   const keyStorageName = 'whispers.encryptionKey';
   const userStorageName = 'whispers.userId';
+  const collectionStorageName = 'whispers.currentCollection';
 
   let encryptionKey = null;
   let userId = null;
   let activeFile = null;
+  let collections = [];
+  let currentCollection = null;
 
   function showMessage(element, message, tone = 'info') {
     element.textContent = message;
     element.style.borderColor = tone === 'error' ? '#ff7f7f' : 'rgba(255,255,255,0.08)';
   }
 
-  function arrayBufferToBase64(buffer) {
+  const arrayBufferToBase64 = logic.arrayBufferToBase64 || ((buffer) => {
     const bytes = new Uint8Array(buffer);
     let binary = '';
     bytes.forEach((byte) => {
       binary += String.fromCharCode(byte);
     });
     return btoa(binary);
-  }
+  });
 
-  function base64ToUint8Array(encoded) {
+  const base64ToUint8Array = logic.base64ToUint8Array || ((encoded) => {
     const binary = atob(encoded);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i += 1) {
       bytes[i] = binary.charCodeAt(i);
     }
     return bytes;
-  }
+  });
 
-  function getExpirationTimestamp(value) {
+  const getExpirationTimestamp = logic.getExpirationTimestamp || ((value) => {
     if (!value) {
       return null;
     }
 
     const date = new Date(`${value}T23:59:59`);
     return Math.floor(date.getTime() / 1000);
-  }
+  });
 
-  function formatExpiration(entry) {
+  const formatExpiration = logic.formatExpiration || ((entry) => {
     if (!entry.expires_at) {
       return 'No expiration date';
     }
 
     return `Expires ${new Date(entry.expires_at * 1000).toLocaleDateString()}`;
-  }
+  });
 
   async function importKey(rawKey) {
     const keyBytes = base64ToUint8Array(rawKey);
@@ -123,17 +132,97 @@ document.addEventListener('DOMContentLoaded', () => {
     return clearBuffer;
   }
 
+  function renderCollections() {
+    if (!collectionSelect) {
+      return;
+    }
+
+    collectionSelect.innerHTML = '';
+    collections.forEach((collection) => {
+      const option = document.createElement('option');
+      option.value = collection.uuid;
+      option.textContent = collection.name;
+      collectionSelect.appendChild(option);
+    });
+
+    if (currentCollection) {
+      collectionSelect.value = currentCollection.uuid;
+      collectionSummary.textContent = `${currentCollection.name} is the active collection.`;
+    }
+  }
+
+  async function loadCollections() {
+    const response = await fetch('/api/storage.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'listCollections', user_id: userId })
+    });
+
+    const payload = await response.json();
+    if (!payload.success) {
+      throw new Error(payload.error || 'Could not load collections');
+    }
+
+    collections = payload.collections || [];
+    if (!collections.length) {
+      return createCollection('Default collection', 'Files you upload first go here.');
+    }
+
+    const storedCollectionId = localStorage.getItem(collectionStorageName);
+    const fallback = collections.find((collection) => collection.uuid === storedCollectionId) || collections[0];
+    currentCollection = fallback;
+    renderCollections();
+    return fallback;
+  }
+
+  async function createCollection(name, description = '') {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      showMessage(uploadResult, 'Please enter a collection name.', 'error');
+      return null;
+    }
+
+    const response = await fetch('/api/storage.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'createCollection', user_id: userId, name: trimmedName, description })
+    });
+
+    const payload = await response.json();
+    if (!payload.success) {
+      throw new Error(payload.error || 'Could not create collection');
+    }
+
+    collections = [...collections, payload.collection];
+    currentCollection = payload.collection;
+    localStorage.setItem(collectionStorageName, payload.collection.uuid);
+    renderCollections();
+    showMessage(uploadResult, `Created collection ${payload.collection.name}.`);
+    return payload.collection;
+  }
+
+  async function selectCollection(collection) {
+    currentCollection = collection;
+    localStorage.setItem(collectionStorageName, collection.uuid);
+    renderCollections();
+    await refreshFiles();
+  }
+
   async function refreshFiles() {
+    if (!storageList) {
+      return;
+    }
+
     storageList.innerHTML = 'Loading…';
     const response = await fetch('/api/storage.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'list', user_id: userId })
+      body: JSON.stringify({ action: 'list', user_id: userId, collection_id: currentCollection?.uuid || 'default' })
     });
 
     const payload = await response.json();
     if (!payload.success || !payload.files.length) {
-      storageList.innerHTML = '<em>No files yet. Upload one to get started.</em>';
+      storageList.innerHTML = '<em>No files yet in this collection. Upload one to get started.</em>';
       return;
     }
 
@@ -175,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const deleteResponse = await fetch('/api/storage.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'delete', user_id: userId, uuid: entry.uuid })
+            body: JSON.stringify({ action: 'delete', user_id: userId, collection_id: currentCollection?.uuid || 'default', uuid: entry.uuid })
           });
           const deletePayload = await deleteResponse.json();
           if (!deletePayload.success) {
@@ -223,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({
           action: 'upload',
           user_id: userId,
+          collection_id: currentCollection?.uuid || 'default',
           file_name: file.name,
           data: encryptedData,
           expires_at: getExpirationTimestamp(expirationDateInput?.value || '')
@@ -257,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch('/api/storage.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'download', user_id: userId, uuid: activeFile.uuid })
+        body: JSON.stringify({ action: 'download', user_id: userId, collection_id: currentCollection?.uuid || 'default', uuid: activeFile.uuid })
       });
       const payload = await response.json();
       if (!payload.success) {
@@ -321,11 +411,27 @@ document.addEventListener('DOMContentLoaded', () => {
       downloadButton.addEventListener('click', downloadAndDecrypt);
       copyKeyButton?.addEventListener('click', copyCurrentKey);
       importKeyButton?.addEventListener('click', importSharedKey);
+      createCollectionButton?.addEventListener('click', async () => {
+        await createCollection(collectionNameInput?.value || '', collectionDescriptionInput?.value || '');
+        if (collectionNameInput) {
+          collectionNameInput.value = '';
+        }
+        if (collectionDescriptionInput) {
+          collectionDescriptionInput.value = '';
+        }
+      });
+      collectionSelect?.addEventListener('change', async (event) => {
+        const selected = collections.find((collection) => collection.uuid === event.target.value);
+        if (selected) {
+          await selectCollection(selected);
+        }
+      });
       fileInput.addEventListener('change', () => {
         if (fileInput.files.length) {
           showMessage(uploadResult, `${fileInput.files[0].name} is ready to upload.`);
         }
       });
+      await loadCollections();
       await refreshFiles();
     } catch (error) {
       stateEl.textContent = `Could not initialize: ${error.message}`;

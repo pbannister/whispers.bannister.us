@@ -1,0 +1,38 @@
+---
+layout: base.njk
+title: Home
+---
+
+<div class="container">
+  <section class="hero">
+    <h1>Whispers</h1>
+    <p>Anonymous encrypted file storage where encryption and decryption happen in your browser.</p>
+    <p>Your files are stored on the server only as encrypted blobs, and your browser keeps the key locally.</p>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Upload a file</h2>
+      <p>Select a local file. It will be encrypted in your browser before it is sent.</p>
+      <input id="fileInput" class="hidden" type="file">
+      <label for="fileInput" class="file-picker">Choose file</label>
+      <button id="uploadButton" type="button">Upload encrypted file</button>
+      <div id="uploadResult" class="message">Waiting for a file.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Your stored files</h2>
+      <p id="state">Preparing your browser key…</p>
+      <div id="storageList" class="file-list"></div>
+    </section>
+  </div>
+
+  <section class="panel hidden" id="downloadPane">
+    <h2>Download a file</h2>
+    <div class="status-card">
+      <strong id="downloadTitle">Select a file</strong>
+      <div id="downloadMeta">Choose an entry from the list to decrypt it locally.</div>
+    </div>
+    <button id="downloadButton" type="button">Download and decrypt</button>
+  </section>
+</div>

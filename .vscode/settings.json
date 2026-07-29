@@ -1,0 +1,21 @@
+{
+    "llama-vscode.agent_commands": [
+        {
+            "name": "about",
+            "description": "Reviews the project and provides information about it.",
+            "prompt": [
+                "What is this project about?",
+                "Provide an overview of the project - purpose, architecture, language, etc."
+            ],
+            "context": []
+        },
+        {
+            "name": "explain",
+            "description": "Explains the attached code/file.",
+            "prompt": [
+                "Explain the provided source code."
+            ],
+            "context": []
+        }
+    ]
+}

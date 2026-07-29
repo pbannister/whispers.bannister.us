@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if title %}{{ title }} | Whispers{% else %}Whispers{% endif %}</title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+  <header>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/contact.php">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    {% block content %}
+      {{ content | safe }}
+    {% endblock %}
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Whispers. All rights reserved.</p>
+  </footer>
+
+  <script src="/assets/js/main.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

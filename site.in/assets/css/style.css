@@ -1,0 +1,240 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #f5f5f5;
+  background: linear-gradient(135deg, #07111f 0%, #10243f 100%);
+  --panel-bg: rgba(255, 255, 255, 0.08);
+  --panel-border: rgba(255, 255, 255, 0.14);
+  --accent: #26c6da;
+  --accent-strong: #2de3f5;
+  --text-muted: #b8c8de;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(38, 198, 218, 0.22), transparent 30%),
+    linear-gradient(135deg, #07111f 0%, #10243f 100%);
+  color: #f5f5f5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+header, footer {
+  padding: 1rem 1.5rem;
+  background: rgba(7, 17, 31, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+nav {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+nav a {
+  color: #91e3ff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+nav a:hover,
+nav a:focus-visible {
+  color: var(--accent-strong);
+  transform: translateY(-1px);
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.hero {
+  padding: 2rem;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+  margin-bottom: 1.5rem;
+}
+
+.hero h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.03em;
+}
+
+.hero p {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+  max-width: 70ch;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.panel {
+  padding: 1.5rem;
+  border-radius: 20px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.panel h2 {
+  margin-top: 0;
+  margin-bottom: 0.35rem;
+}
+
+.panel p {
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+
+button,
+.file-picker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #07111f;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  box-shadow: 0 8px 18px rgba(38, 198, 218, 0.25);
+}
+
+button:hover,
+button:focus-visible,
+.file-picker:hover,
+.file-picker:focus-visible {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 10px 22px rgba(38, 198, 218, 0.32);
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+  transform: none;
+}
+
+.file-picker {
+  width: fit-content;
+  text-decoration: none;
+}
+
+.message,
+.status-card {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: rgba(6, 20, 39, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f7fbff;
+}
+
+.status-card strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.file-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-item button {
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.95rem;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.contact-form label {
+  font-weight: 600;
+  color: #e8f7ff;
+}
+
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(3, 10, 22, 0.7);
+  color: #f5f5f5;
+  font: inherit;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  outline: 2px solid rgba(38, 198, 218, 0.45);
+  border-color: rgba(38, 198, 218, 0.6);
+}
+
+.hidden { display: none; }
+
+@media (max-width: 800px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .container {
+    padding: 1rem 1rem 3rem;
+  }
+
+  .hero,
+  .panel {
+    padding: 1.25rem;
+  }
+}

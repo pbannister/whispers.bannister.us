@@ -8,12 +8,14 @@ The system shall support the following capabilities.
 
 ## File and Collection Management
 - The system shall generate or recover a local encryption key in the browser.
+- The system shall allow users to export and import their identity (public/private key pair and collection keys) to enable multi-device use.
 - The system shall allow users to upload files that are encrypted before transmission.
 - The system shall store encrypted files and metadata on the server.
 - The system shall group files into collections that each have a unique identifier.
 - The system shall provide a default collection for each user and allow users to create additional collections.
 - The system shall allow users to view, select, and manage files within the current collection.
 - The system shall allow users to delete their files.
+- The system shall provide a 'Recently Deleted' feature where deleted files are held for a grace period before permanent deletion.
 - The system shall allow users to set an expiration date for a file that triggers automatic deletion.
 
 ## Sharing and Access
@@ -34,4 +36,4 @@ The system shall support the following capabilities.
 - The system shall provide a user-friendly interface for uploading, listing, downloading, and deleting files.
 - The system shall provide clear status messages and guidance for users.
 - The system shall show file metadata such as size and upload date.
-- The system shall allow users to search files and collections by name or date.
+- The system shall allow users to search files and collections by name (stored in plaintext) or date.
